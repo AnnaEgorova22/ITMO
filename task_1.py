@@ -1,3 +1,4 @@
+"""
 Задание 1
 
 Планируется сделать веб приложение для определения кредитного риска заемщика. Пользователь вводит некоторые вводные данные, на основании которых получит вероятность дефолта заемщика. Модель для указанного приложения планирую обучить сама на синтетических данных.
@@ -11,10 +12,31 @@
 - Transaction: базовый класс для транзакций
 - TopUp transaction: пополнение баланса
 - Debit transaction: списание средств с баланса
-- Request history: хранит историю ML pfghjcjd
+- Request history: хранит историю ML запросов
+
+"""
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+
+class Balance:
+    def __init__(self, amount: float = 0.0):
+        self._amount = amount
+
+    def get_amount(self) -> float:
+        return self._amount
+
+    def deposit(self, amount: float) -> None:
+        if amount <= 0:
+            raise ValueError("Сумма пополнения должна быть положительной")
+        self._amount += amount
+
+    def withdraw(self, amount: float) -> None:
+        if amount <= 0:
+            raise ValueError("Сумма списания должна быть положительной")
+        if self._amount < amount:
+            raise ValueError("Недостаточно средств на балансе")
+        self._amount -= amount
 
 class User:
     def __init__(self, user_id: int, login: str, password: str, role: str, balance: float = 0.0):
@@ -35,18 +57,6 @@ class User:
 
     def get_balance(self) -> float:
         return self._balance
-
-    def deposit(self, amount: float) -> None:
-        if amount <= 0:
-            raise ValueError("Сумма пополнения должна быть положительной")
-        self._balance += amount
-
-    def withdraw(self, amount: float) -> None:
-        if amount <= 0:
-            raise ValueError("Сумма списания должна быть положительной")
-        if self._balance < amount:
-            raise ValueError("Недостаточно средств на балансе")
-        self._balance -= amount
 
 
 class Admin(User):
