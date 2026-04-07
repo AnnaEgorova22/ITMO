@@ -1,0 +1,207 @@
+"""
+Задание 1
+
+Планируется сделать веб приложение для определения кредитного риска заемщика. Пользователь вводит некоторые вводные данные, на основании которых получит вероятность дефолта заемщика. Модель для указанного приложения планирую обучить сама на синтетических данных.
+
+Для объектной модели выделены следующие сущности:
+- User: пользователь системы. Содержит id, логин, пароль и баланс. Реализованы методы для пополнения и расходва баланса
+- Admin: администратор системы. Наследуется от класса User и имеет дополнительные функции: подтверждение пополнения баланса и просмотр истории транзакций.
+- ML model: содержит id, название, описание и стоимость предсказания. Метод predict - прогноз модели
+- ML task: задача для ML модели. Содержит id задачи, входящие данные, статус выполнения и ссылки на пользователя, модель и прогноз. Методы проверки данных и запуска задачи.
+- Prediction Result: хранит результат выполнения предсказания
+- Transaction: базовый класс для транзакций
+- TopUp transaction: пополнение баланса
+- Debit transaction: списание средств с баланса
+- Request history: хранит историю ML запросов
+
+"""
+
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+class Balance:
+    def __init__(self, amount: float = 0.0):
+        self._amount = amount
+
+    def get_amount(self) -> float:
+        return self._amount
+
+    def deposit(self, amount: float) -> None:
+        if amount <= 0:
+            raise ValueError("Сумма пополнения должна быть положительной")
+        self._amount += amount
+
+    def withdraw(self, amount: float) -> None:
+        if amount <= 0:
+            raise ValueError("Сумма списания должна быть положительной")
+        if self._amount < amount:
+            raise ValueError("Недостаточно средств на балансе")
+        self._amount -= amount
+
+class User:
+    def __init__(self, user_id: int, login: str, password: str, role: str, balance: float = 0.0):
+        self._user_id = user_id
+        self._login = login
+        self._password = password
+        self._role = role
+        self._balance = balance
+
+    def get_user_id(self) -> int:
+        return self._user_id
+
+    def get_login(self) -> str:
+        return self._login
+
+    def get_role(self) -> str:
+        return self._role
+
+    def get_balance(self) -> float:
+        return self._balance
+
+
+class Admin(User):
+    def __init__(self, user_id: int, login: str, password: str, balance: float = 0.0):
+        super().__init__(user_id, login, password, role="admin", balance=balance)
+
+    def approve_top_up(self, transaction: "TopUpTransaction") -> None:
+        transaction.apply()
+
+    def view_all_transactions(self, transactions: list) -> None:
+        for transaction in transactions:
+            print(transaction)
+
+
+class MLModel:
+    def __init__(self, model_id: int, name: str, description: str, prediction_cost: float):
+        self._model_id = model_id
+        self._name = name
+        self._description = description
+        self._prediction_cost = prediction_cost
+
+    def get_model_id(self) -> int:
+        return self._model_id
+
+    def get_name(self) -> str:
+        return self._name
+
+    def get_description(self) -> str:
+        return self._description
+
+    def get_prediction_cost(self) -> float:
+        return self._prediction_cost
+
+    def predict(self, input_data: dict) -> float:
+        # Упрощенно: здесь должен вызываться ML-алгоритм
+        return 0.15
+
+
+class PredictionResult:
+    def __init__(self, result_id: int, prediction_value: float, created_at: datetime):
+        self._result_id = result_id
+        self._prediction_value = prediction_value
+        self._created_at = created_at
+
+    def get_result_id(self) -> int:
+        return self._result_id
+
+    def get_prediction_value(self) -> float:
+        return self._prediction_value
+
+    def get_created_at(self) -> datetime:
+        return self._created_at
+
+
+class MLTask:
+    def __init__(self, task_id: int, input_data: dict, status: str, user: User, model: MLModel):
+        self._task_id = task_id
+        self._input_data = input_data
+        self._status = status
+        self._user = user
+        self._model = model
+        self._result = None
+
+    def get_task_id(self) -> int:
+        return self._task_id
+
+    def get_input_data(self) -> dict:
+        return self._input_data
+
+    def get_status(self) -> str:
+        return self._status
+
+    def get_user(self) -> User:
+        return self._user
+
+    def get_model(self) -> MLModel:
+        return self._model
+
+    def get_result(self):
+        return self._result
+
+    def validate(self) -> bool:
+        return len(self._input_data) > 0
+
+    def run(self) -> None:
+        if not self.validate():
+            self._status = "validation_failed"
+            raise ValueError("Входные данные не прошли валидацию")
+
+        cost = self._model.get_prediction_cost()
+        self._user.withdraw(cost)
+
+        prediction = self._model.predict(self._input_data)
+        self._result = PredictionResult(
+            result_id=1,
+            prediction_value=prediction,
+            created_at=datetime.now()
+        )
+        self._status = "completed"
+
+
+class Transaction(ABC):
+    def __init__(self, transaction_id: int, amount: float, created_at: datetime, user: User, task: MLTask = None):
+        self._transaction_id = transaction_id
+        self._amount = amount
+        self._created_at = created_at
+        self._user = user
+        self._task = task
+
+    def get_transaction_id(self) -> int:
+        return self._transaction_id
+
+    def get_amount(self) -> float:
+        return self._amount
+
+    def get_created_at(self) -> datetime:
+        return self._created_at
+
+    def get_user(self) -> User:
+        return self._user
+
+    def get_task(self):
+        return self._task
+
+    @abstractmethod
+    def apply(self) -> None:
+        pass
+
+
+class TopUpTransaction(Transaction):
+    def apply(self) -> None:
+        self._user.deposit(self._amount)
+
+
+class DebitTransaction(Transaction):
+    def apply(self) -> None:
+        self._user.withdraw(self._amount)
+
+
+class RequestHistory:
+    def __init__(self):
+        self._tasks = []
+
+    def add_task(self, task: MLTask) -> None:
+        self._tasks.append(task)
+
+    def get_tasks(self) -> list:
+        return self._tasks
