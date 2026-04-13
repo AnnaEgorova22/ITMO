@@ -1,11 +1,10 @@
-version: "3.9"
-
 services:
 
   app:
     build:
       context: ./app
     container_name: app
+    restart: unless-stopped
     env_file:
       - ./app/.env
     volumes:
@@ -18,6 +17,7 @@ services:
     build:
       context: ./web-proxy
     container_name: web-proxy
+    restart: unless-stopped
     depends_on:
       - app
     ports:

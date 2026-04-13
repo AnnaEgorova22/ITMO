@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install flask
+RUN pip install flask sqlalchemy psycopg2-binary
 
 COPY src/ /app/src/
 
