@@ -1,7 +1,15 @@
 import json
 
 from db import SessionLocal
-from models import User, Balance, MLModel, MLTask, Transaction
+from models import (
+    User,
+    Balance,
+    MLModel,
+    MLTask,
+    Transaction,
+    TransactionType,
+    TaskStatus,
+)
 
 
 def create_user(login: str, password: str, role: str = "user") -> User:

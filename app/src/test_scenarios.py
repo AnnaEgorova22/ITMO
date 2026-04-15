@@ -13,7 +13,7 @@ from operations import (
 
 def run_tests():
     print("=== Создание пользователя ===")
-    user = create_user("test_user", "test123")
+    user = create_user("test_user_v2", "test123")
     print(f"Создан пользователь: id={user.id}, login={user.login}")
 
     print("\n=== Получение пользователей ===")
