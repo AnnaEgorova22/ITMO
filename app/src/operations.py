@@ -41,7 +41,7 @@ def deposit_balance(user_id: int, amount: float) -> None:
         transaction = Transaction(
             user_id=user_id,
             amount=amount,
-            transaction_type="top_up"
+            transaction_type=TransactionType.top_up
         )
         session.add(transaction)
 
@@ -93,7 +93,7 @@ def create_ml_task(user_id: int, model_id: int, input_data: dict) -> MLTask:
             user_id=user_id,
             model_id=model_id,
             input_data=json.dumps(input_data, ensure_ascii=False),
-            status="completed",
+            status=TaskStatus.completed,
             prediction_value=0.15
         )
         session.add(task)
