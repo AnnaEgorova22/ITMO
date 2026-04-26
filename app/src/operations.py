@@ -9,10 +9,11 @@ from models import (
     Transaction,
     TransactionType,
     TaskStatus,
+    UserRole
 )
 
 
-def create_user(login: str, password: str, role: str = "user") -> User:
+def create_user(login: str, password: str, role: UserRole = UserRole.user) -> User:
     session = SessionLocal()
     try:
         user = User(login=login, password=password, role=role)
@@ -144,5 +145,29 @@ def get_user_transactions(user_id: int):
             .order_by(Transaction.created_at.desc())
             .all()
         )
+    finally:
+        session.close()
+
+def get_user_by_id(user_id: int):
+    session = SessionLocal()
+    try:
+        return session.query(User).filter(User.id == user_id).first()
+    finally:
+        session.close()
+
+
+def get_user_by_login(login: str):
+    session = SessionLocal()
+    try:
+        return session.query(User).filter(User.login == login).first()
+    finally:
+        session.close()
+
+
+def get_user_balance(user_id: int):
+    session = SessionLocal()
+    try:
+        balance = session.query(Balance).filter(Balance.user_id == user_id).first()
+        return balance
     finally:
         session.close()

@@ -2,10 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install flask sqlalchemy psycopg2-binary
+RUN pip install fastapi uvicorn flask sqlalchemy psycopg2-binary
 
 COPY src/ /app/src/
 
 WORKDIR /app/src
 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
