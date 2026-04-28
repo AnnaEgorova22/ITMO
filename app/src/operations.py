@@ -1,4 +1,5 @@
 import json
+from models import MLTask, TaskStatus
 
 from db import SessionLocal
 from models import (
@@ -169,5 +170,48 @@ def get_user_balance(user_id: int):
     try:
         balance = session.query(Balance).filter(Balance.user_id == user_id).first()
         return balance
+    finally:
+        session.close()
+
+def create_pending_ml_task(user_id: int, model_id: int, input_data: dict) -> MLTask:
+    session = SessionLocal()
+    try:
+        task = MLTask(
+            user_id=user_id,
+            model_id=model_id,
+            input_data=json.dumps(input_data, ensure_ascii=False),
+            status=TaskStatus.created,
+            prediction_value=None,
+        )
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+        return task
+    finally:
+        session.close()
+
+
+def complete_ml_task(task_id: int, prediction_value: float, worker_id: str) -> None:
+    session = SessionLocal()
+    try:
+        task = session.query(MLTask).filter(MLTask.id == task_id).first()
+        if task is None:
+            raise ValueError("ML-задача не найдена")
+
+        task.status = TaskStatus.completed
+        task.prediction_value = prediction_value
+
+        session.commit()
+    finally:
+        session.close()
+
+
+def fail_ml_task(task_id: int) -> None:
+    session = SessionLocal()
+    try:
+        task = session.query(MLTask).filter(MLTask.id == task_id).first()
+        if task is not None:
+            task.status = TaskStatus.failed
+            session.commit()
     finally:
         session.close()

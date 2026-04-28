@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from rabbitmq_client import publish_task
+from operations import create_pending_ml_task
 
 from auth_utils import authenticate_user
 from operations import (
@@ -161,3 +163,34 @@ def get_transaction_history(user_id: int):
         )
         for tr in transactions
     ]
+
+@app.post("/predict-async")
+def predict_async(data: PredictRequest):
+    user = get_user_by_id(data.user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    balance = get_user_balance(data.user_id)
+    if balance is None:
+        raise HTTPException(status_code=404, detail="Баланс не найден")
+
+    task = create_pending_ml_task(
+        user_id=data.user_id,
+        model_id=data.model_id,
+        input_data=data.input_data,
+    )
+
+    message = {
+        "task_id": task.id,
+        "features": data.input_data,
+        "model": str(data.model_id),
+        "status": "created",
+    }
+
+    publish_task(message)
+
+    return {
+        "task_id": task.id,
+        "status": "created",
+        "message": "Задача отправлена в очередь RabbitMQ",
+    }

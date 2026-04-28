@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn flask sqlalchemy psycopg2-binary
+RUN pip install fastapi uvicorn flask sqlalchemy psycopg2-binary pika
 
 COPY src/ /app/src/
 
