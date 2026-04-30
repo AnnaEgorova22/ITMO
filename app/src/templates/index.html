@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ML Service Cabinet</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>ML-сервис оценки кредитного риска</h1>
+        <p>Личный кабинет для выполнения ML-запросов и управления балансом</p>
+    </header>
+
+    <main>
+        <section class="card">
+            <h2>Описание сервиса</h2>
+            <p>
+                Сервис позволяет оценить вероятность дефолта заемщика на основе введенных данных.
+                Пользователь может зарегистрироваться, пополнить баланс, выполнить ML-запрос
+                и посмотреть историю операций.
+            </p>
+        </section>
+
+        <section class="grid">
+            <div class="card">
+                <h2>Регистрация</h2>
+                <input id="register-login" placeholder="Логин">
+                <input id="register-password" type="password" placeholder="Пароль">
+                <button onclick="registerUser()">Зарегистрироваться</button>
+            </div>
+
+            <div class="card">
+                <h2>Авторизация</h2>
+                <input id="login-login" placeholder="Логин">
+                <input id="login-password" type="password" placeholder="Пароль">
+                <button onclick="loginUser()">Войти</button>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Личный кабинет</h2>
+            <p><b>User ID:</b> <span id="current-user-id">не авторизован</span></p>
+            <p><b>Логин:</b> <span id="current-login">—</span></p>
+            <p><b>Баланс:</b> <span id="current-balance">—</span></p>
+            <button onclick="loadBalance()">Обновить баланс</button>
+        </section>
+
+        <section class="card">
+            <h2>Пополнение баланса</h2>
+            <input id="topup-amount" type="number" placeholder="Сумма пополнения">
+            <button onclick="topUpBalance()">Пополнить баланс</button>
+        </section>
+
+        <section class="card">
+            <h2>ML-запрос</h2>
+            <input id="model-id" type="number" value="1" placeholder="ID модели">
+            <input id="income" type="number" placeholder="Доход">
+            <input id="age" type="number" placeholder="Возраст">
+            <input id="credit-amount" type="number" placeholder="Сумма кредита">
+            <button onclick="makePrediction()">Выполнить предсказание</button>
+
+            <div class="result">
+                <h3>Результат</h3>
+                <pre id="prediction-result">—</pre>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card">
+                <h2>История ML-запросов</h2>
+                <button onclick="loadTaskHistory()">Загрузить историю</button>
+                <div id="task-history"></div>
+            </div>
+
+            <div class="card">
+                <h2>История транзакций</h2>
+                <button onclick="loadTransactionHistory()">Загрузить историю</button>
+                <div id="transaction-history"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Сообщения</h2>
+            <pre id="message-box">—</pre>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

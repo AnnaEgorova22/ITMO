@@ -3,7 +3,8 @@ import os
 import time
 import pika
 
-from operations import complete_ml_task, fail_ml_task
+from operations import complete_ml_task, fail_ml_task, refund_balance_for_task
+from ml_model import predict_default_probability
 
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
@@ -13,29 +14,19 @@ WORKER_ID = os.getenv("WORKER_ID", "worker-unknown")
 
 
 def validate_features(features: dict) -> None:
-    if not isinstance(features, dict):
-        raise ValueError("features должны быть JSON-объектом")
+    required_fields = ["income", "age", "credit_amount"]
 
-    if "income" not in features:
-        raise ValueError("Отсутствует обязательное поле income")
+    for field in required_fields:
+        if field not in features:
+            raise ValueError(f"Отсутствует обязательное поле {field}")
 
-    if "age" not in features:
-        raise ValueError("Отсутствует обязательное поле age")
+    for field in required_fields:
+        try:
+            float(features[field])
+        except ValueError:
+            raise ValueError(f"Поле {field} должно быть числом")
 
-
-def make_prediction(features: dict) -> float:
-    income = float(features.get("income", 0))
-    age = float(features.get("age", 0))
-
-    prediction = 0.15
-
-    if income < 50000:
-        prediction += 0.10
-
-    if age < 25:
-        prediction += 0.05
-
-    return round(prediction, 4)
+prediction = predict_default_probability(features)
 
 
 def process_message(ch, method, properties, body):
@@ -72,8 +63,9 @@ def process_message(ch, method, properties, body):
         try:
             if "task_id" in locals():
                 fail_ml_task(task_id)
+                refund_balance_for_task(task_id)
         except Exception as db_error:
-            print(f"[{WORKER_ID}] Ошибка обновления статуса задачи: {db_error}", flush=True)
+            print(f"[{WORKER_ID}] Ошибка возврата средств: {db_error}", flush=True)
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
 

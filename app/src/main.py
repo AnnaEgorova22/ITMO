@@ -1,11 +1,13 @@
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from rabbitmq_client import publish_task
-from operations import create_pending_ml_task
 
 from auth_utils import authenticate_user
 from operations import (
     create_user,
+    create_pending_ml_task,
     get_user_by_id,
     get_user_by_login,
     get_user_balance,
@@ -13,6 +15,11 @@ from operations import (
     create_ml_task,
     get_user_task_history,
     get_user_transactions,
+    get_task_by_id,
+    get_ml_model_by_id, 
+    withdraw_balance, 
+    refund_balance_for_task, 
+    fail_ml_task
 )
 from schemas import (
     RegisterRequest,
@@ -28,6 +35,12 @@ from schemas import (
 
 app = FastAPI(title="ML Service API")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/ui", response_class=HTMLResponse)
+def web_interface():
+    with open("templates/index.html", "r", encoding="utf-8") as file:
+        return file.read()
 
 @app.get("/")
 def root():
@@ -174,23 +187,68 @@ def predict_async(data: PredictRequest):
     if balance is None:
         raise HTTPException(status_code=404, detail="Баланс не найден")
 
+    ml_model = get_ml_model_by_id(data.model_id)
+    if ml_model is None:
+        raise HTTPException(status_code=404, detail="ML-модель не найдена")
+
+    if balance.amount <= 0:
+        raise HTTPException(status_code=400, detail="Баланс должен быть положительным")
+
+    if balance.amount < ml_model.prediction_cost:
+        raise HTTPException(status_code=400, detail="Недостаточно средств для выполнения предсказания")
+
     task = create_pending_ml_task(
         user_id=data.user_id,
         model_id=data.model_id,
         input_data=data.input_data,
     )
 
-    message = {
-        "task_id": task.id,
-        "features": data.input_data,
-        "model": str(data.model_id),
-        "status": "created",
-    }
+    try:
+        withdraw_balance(
+            user_id=data.user_id,
+            amount=ml_model.prediction_cost,
+        )
 
-    publish_task(message)
+        message = {
+            "task_id": task.id,
+            "features": data.input_data,
+            "model": ml_model.name,
+            "status": "created",
+        }
+
+        publish_task(message)
+
+    except Exception as error:
+        fail_ml_task(task.id)
+
+        try:
+            refund_balance_for_task(task.id)
+        except Exception:
+            pass
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при постановке задачи в очередь: {error}"
+        )
 
     return {
         "task_id": task.id,
         "status": "created",
         "message": "Задача отправлена в очередь RabbitMQ",
+    }
+
+@app.get("/tasks/{task_id}")
+def get_task_result(task_id: int):
+    task = get_task_by_id(task_id)
+
+    if task is None:
+        raise HTTPException(status_code=404, detail="ML-задача не найдена")
+
+    return {
+        "task_id": task.id,
+        "user_id": task.user_id,
+        "model_id": task.model_id,
+        "status": task.status.value if hasattr(task.status, "value") else task.status,
+        "prediction_value": task.prediction_value,
+        "created_at": task.created_at,
     }

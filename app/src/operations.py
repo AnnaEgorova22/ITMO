@@ -215,3 +215,44 @@ def fail_ml_task(task_id: int) -> None:
             session.commit()
     finally:
         session.close()
+
+def refund_balance_for_task(task_id: int) -> None:
+    session = SessionLocal()
+    try:
+        task = session.query(MLTask).filter(MLTask.id == task_id).first()
+        if task is None:
+            raise ValueError("ML-задача не найдена")
+
+        model = session.query(MLModel).filter(MLModel.id == task.model_id).first()
+        balance = session.query(Balance).filter(Balance.user_id == task.user_id).first()
+
+        if model is None or balance is None:
+            raise ValueError("Не найдена модель или баланс пользователя")
+
+        balance.amount += model.prediction_cost
+
+        refund_transaction = Transaction(
+            user_id=task.user_id,
+            task_id=task.id,
+            amount=model.prediction_cost,
+            transaction_type=TransactionType.refund
+        )
+
+        session.add(refund_transaction)
+        session.commit()
+    finally:
+        session.close()
+
+def get_task_by_id(task_id: int):
+    session = SessionLocal()
+    try:
+        return session.query(MLTask).filter(MLTask.id == task_id).first()
+    finally:
+        session.close()
+
+def get_ml_model_by_id(model_id: int):
+    session = SessionLocal()
+    try:
+        return session.query(MLModel).filter(MLModel.id == model_id).first()
+    finally:
+        session.close()

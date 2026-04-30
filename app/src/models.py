@@ -15,6 +15,7 @@ class TaskStatus(enum.Enum):
 
 
 class TransactionType(enum.Enum):
+    refund = "refund"
     top_up = "top_up"
     debit = "debit"
     prediction_charge = "prediction_charge"
