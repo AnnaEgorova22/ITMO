@@ -26,8 +26,6 @@ def validate_features(features: dict) -> None:
         except ValueError:
             raise ValueError(f"Поле {field} должно быть числом")
 
-prediction = predict_default_probability(features)
-
 
 def process_message(ch, method, properties, body):
     try:
@@ -42,7 +40,7 @@ def process_message(ch, method, properties, body):
 
         time.sleep(2)
 
-        prediction = make_prediction(features)
+        prediction = predict_default_probability(features)
 
         complete_ml_task(
             task_id=task_id,

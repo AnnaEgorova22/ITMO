@@ -1,8 +1,9 @@
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request, Form
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from rabbitmq_client import publish_task
+from fastapi.templating import Jinja2Templates
 
 from auth_utils import authenticate_user
 from operations import (
@@ -35,17 +36,154 @@ from schemas import (
 
 app = FastAPI(title="ML Service API")
 
+templates = Jinja2Templates(directory="templates")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/ui", response_class=HTMLResponse)
-def web_interface():
-    with open("templates/index.html", "r", encoding="utf-8") as file:
-        return file.read()
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(request,
+        "index.html"
+    )
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-@app.get("/")
-def root():
-    return {"message": "ML Service API is running"}
 
+@app.get("/ui/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse(request,
+        "login.html",
+        {"error": None}
+    )
+
+
+@app.post("/ui/login")
+def login_action(request: Request, login: str = Form(...), password: str = Form(...)):
+    user = authenticate_user(login, password)
+
+    if user is None:
+        return templates.TemplateResponse(request,
+            "login.html",
+            {"error": "Неверный логин или пароль"}
+        )
+
+    return RedirectResponse(
+        url=f"/ui/dashboard?user_id={user.id}",
+        status_code=303
+    )
+
+
+@app.get("/ui/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse(request,
+        "register.html",
+        {"error": None}
+    )
+
+
+@app.post("/ui/register")
+def register_action(request: Request, login: str = Form(...), password: str = Form(...)):
+    existing_user = get_user_by_login(login)
+
+    if existing_user is not None:
+        return templates.TemplateResponse(request,
+            "register.html",
+            {"error": "Пользователь с таким логином уже существует"}
+        )
+
+    user = create_user(login, password)
+
+    return RedirectResponse(
+        url=f"/ui/dashboard?user_id={user.id}",
+        status_code=303
+    )
+
+
+@app.get("/ui/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request, user_id: int):
+    user = get_user_by_id(user_id)
+
+    if user is None:
+        return RedirectResponse(url="/ui/login", status_code=303)
+
+    return templates.TemplateResponse(request,
+        "dashboard.html",
+        {
+            "user": user,
+            "balance": get_user_balance(user_id),
+            "tasks": get_user_task_history(user_id),
+            "transactions": get_user_transactions(user_id),
+            "error": None,
+            "prediction_result": None,
+        }
+    )
+
+
+@app.post("/ui/logout")
+def logout():
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/ui/balance/top-up")
+def ui_top_up(request: Request, user_id: int = Form(...), amount: float = Form(...)):
+    try:
+        deposit_balance(user_id, amount)
+        return RedirectResponse(
+            url=f"/ui/dashboard?user_id={user_id}",
+            status_code=303
+        )
+    except ValueError as e:
+        user = get_user_by_id(user_id)
+        return templates.TemplateResponse(request,
+            "dashboard.html",
+            {
+                "user": user,
+                "balance": get_user_balance(user_id),
+                "tasks": get_user_task_history(user_id),
+                "transactions": get_user_transactions(user_id),
+                "error": str(e),
+                "prediction_result": None,
+            }
+        )
+
+
+@app.post("/ui/predict")
+def ui_predict(
+    request: Request,
+    user_id: int = Form(...),
+    model_id: int = Form(...),
+    income: float = Form(...),
+    age: int = Form(...),
+    credit_amount: float = Form(...),
+):
+    user = get_user_by_id(user_id)
+
+    input_data = {
+        "income": income,
+        "age": age,
+        "credit_amount": credit_amount,
+    }
+
+    try:
+        task = create_ml_task(user_id, model_id, input_data)
+        prediction_result = task.prediction_value
+        error = None
+    except ValueError as e:
+        prediction_result = None
+        error = str(e)
+
+    return templates.TemplateResponse(request,
+        "dashboard.html",
+        {
+            "user": user,
+            "balance": get_user_balance(user_id),
+            "tasks": get_user_task_history(user_id),
+            "transactions": get_user_transactions(user_id),
+            "error": error,
+            "prediction_result": prediction_result,
+        }
+    )
 
 @app.post("/auth/register", response_model=UserResponse)
 def register_user(data: RegisterRequest):

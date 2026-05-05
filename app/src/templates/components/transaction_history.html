@@ -1,0 +1,28 @@
+<section class="card">
+    <h2>История транзакций</h2>
+
+    {% if transactions %}
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Тип операции</th>
+                <th>Сумма</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for tr in transactions %}
+                <tr>
+                    <td>{{ tr.id }}</td>
+                    <td>{{ tr.created_at }}</td>
+                    <td>{{ tr.transaction_type.value if tr.transaction_type.value else tr.transaction_type }}</td>
+                    <td>{{ tr.amount }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>История транзакций пока пуста.</p>
+    {% endif %}
+</section>

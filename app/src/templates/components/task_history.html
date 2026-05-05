@@ -1,0 +1,28 @@
+<section class="card">
+    <h2>История ML-запросов</h2>
+
+    {% if tasks %}
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Статус</th>
+                <th>Предсказание</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for task in tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td>{{ task.created_at }}</td>
+                    <td>{{ task.status.value if task.status.value else task.status }}</td>
+                    <td>{{ task.prediction_value }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>История ML-запросов пока пуста.</p>
+    {% endif %}
+</section>

@@ -11,6 +11,20 @@ header {
     padding: 24px 40px;
 }
 
+header h1 {
+    margin: 0 0 12px 0;
+}
+
+nav a {
+    color: white;
+    margin-right: 16px;
+    text-decoration: none;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
 main {
     padding: 24px 40px;
 }
@@ -23,25 +37,18 @@ main {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
 input {
     display: block;
     width: 100%;
     max-width: 360px;
     padding: 10px;
-    margin: 8px 0;
+    margin: 8px 0 16px 0;
     border: 1px solid #ccc;
     border-radius: 8px;
 }
 
 button {
     padding: 10px 16px;
-    margin-top: 8px;
     border: none;
     border-radius: 8px;
     background: #2563eb;
@@ -53,18 +60,33 @@ button:hover {
     background: #1d4ed8;
 }
 
-pre {
-    background: #f1f5f9;
+button.secondary {
+    background: #6b7280;
+}
+
+button.secondary:hover {
+    background: #4b5563;
+}
+
+.error {
     padding: 12px;
     border-radius: 8px;
-    overflow-x: auto;
+    background: #fee2e2;
+    color: #991b1b;
+    margin-bottom: 12px;
 }
 
-.history-item {
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
     border-bottom: 1px solid #e5e7eb;
-    padding: 10px 0;
+    text-align: left;
 }
 
-.result {
-    margin-top: 16px;
+th {
+    background: #f9fafb;
 }

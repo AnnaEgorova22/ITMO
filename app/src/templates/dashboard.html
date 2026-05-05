@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h2>Личный кабинет</h2>
+
+    <p><b>ID пользователя:</b> {{ user.id }}</p>
+    <p><b>Логин:</b> {{ user.login }}</p>
+    <p><b>Баланс:</b> {{ balance.amount if balance else 0 }} кредитов</p>
+
+    <form method="post" action="/ui/logout">
+        <button type="submit" class="secondary">Выйти</button>
+    </form>
+</section>
+
+{% if error %}
+<section class="card">
+    <div class="error">{{ error }}</div>
+</section>
+{% endif %}
+
+{% if prediction_result is not none %}
+<section class="card">
+    <h2>Результат предсказания</h2>
+    <p>Вероятность дефолта: <b>{{ prediction_result }}</b></p>
+</section>
+{% endif %}
+
+{% include "components/balance.html" %}
+{% include "components/predict_form.html" %}
+{% include "components/task_history.html" %}
+{% include "components/transaction_history.html" %}
+{% endblock %}

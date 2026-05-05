@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn flask sqlalchemy psycopg2-binary pika scikit-learn joblib numpy
+RUN pip install fastapi uvicorn flask sqlalchemy psycopg2-binary pika scikit-learn joblib numpy python-multipart
 
 COPY src/ /app/src/
 
