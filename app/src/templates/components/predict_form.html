@@ -1,0 +1,21 @@
+<section class="card">
+    <h2>ML-запрос</h2>
+
+    <form method="post" action="/ui/predict">
+        <input type="hidden" name="user_id" value="{{ user.id }}">
+
+        <label>ID модели</label>
+        <input type="number" name="model_id" value="1" required>
+
+        <label>Доход</label>
+        <input type="number" name="income" required>
+
+        <label>Возраст</label>
+        <input type="number" name="age" required>
+
+        <label>Сумма кредита</label>
+        <input type="number" name="credit_amount" required>
+
+        <button type="submit">Выполнить предсказание</button>
+    </form>
+</section>

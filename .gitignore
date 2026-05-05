@@ -1,0 +1,10 @@
+# env файлы
+.env
+app/.env
+
+# python кеш
+__pycache__/
+*.pyc
+
+# macOS мусор
+.DS_Store
